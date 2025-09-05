@@ -1,17 +1,25 @@
 import dotenv from "dotenv";
-import express from "express";
-import app from "./app.js"
-
 dotenv.config();
 
+import express from "express";
+import app from "./app.js";
+import connectToDb from "./db/index.js";
 
 const PORT = process.env.PORT || 3000;
 
+// Connect to Database
+await connectToDb();
+
 app.get("/", (req, res) => {
   res.status(200).json({
-    msg:"Hello Server"
+    msg: "Hello Server",
   });
 });
+
+// import the routes
+import healthCheckRouter from "./routes/health.routes.js";
+ 
+app.use("/api/v1/healthcheck", healthCheckRouter);
 
 app.listen(PORT, () => {
   console.log(`server start at  port at http://localhost:${PORT}`);
