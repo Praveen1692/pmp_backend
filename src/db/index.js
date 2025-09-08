@@ -8,11 +8,13 @@ const connectToDb = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log(" ✅ Connection string", connection.connection.name);
+    console.log(" ✅ Connection string ", connection.connection.name);
   } catch (error) {
     console.log(" ❌  mongoDB connection error", error);
     process.exit(1);
   }
 };
-
+ 
 export default connectToDb;
+
+console.log([1,2,3]+[4,5,6]);
