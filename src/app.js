@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 const app = express();
+import cookieParser from "cookie-parser";
+
+app.use(cookieParser());
 
 // basic configurations
 app.use(
@@ -21,8 +24,8 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGIN,
     credentials: true,
-    methods:["GET", "POST", "PUT", "PATCH","DELETE", "OPTIONS"],
-    allowedHeaders:["Authorization", "Content-Type"]
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Authorization", "Content-Type"],
   }),
 );
 

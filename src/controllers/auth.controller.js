@@ -3,12 +3,11 @@ import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { emailVerificationMailgenContent, sendEmail } from "../utils/mail.js";
-import { use } from "react";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
-    const accessTolken = await user.generateAccessToken();
+    const accessToken = await user.generateAccessToken();
 
     const refreshToken = await user.generateRefreshToken();
 
@@ -16,13 +15,15 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
     await user.save({ validateBeforeSave: false });
 
-    return { accessTolken, refreshToken };
+    return { accessToken, refreshToken };
   } catch (error) {
     throw new ApiError(500, "Something went wrong while generate access token");
   }
 };
 
 const registerUser = asyncHandler(async (req, res) => {
+  console.log("Register User");
+
   const { email, username, password, role } = req.body;
 
   const existedUser = await User.findOne({
@@ -75,3 +76,48 @@ const registerUser = asyncHandler(async (req, res) => {
       ),
     );
 });
+
+const login = asyncHandler(async (req, res) => {
+  const { email, password, username } = req.body;
+
+  if (!email || !password || !username) {
+    throw new ApiError(404, "All Field are required");
+  }
+
+  const user = await User.findOne({
+    email,
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User is not exit with this email id");
+  }
+
+  const comparePassword = await user.isPasswordCorrect(password);
+
+  if (!comparePassword) {
+    throw new ApiError(400, "Password is not correct");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+    user._id,
+  );
+  console.log("Access Token", accessToken);
+  console.log("Refresh Token", refreshToken);
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken -emailVerificationToken  -emailVerificationExpiry",
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(new ApiResponse(200, "User LoggedIn Successfully"));
+});
+
+export { registerUser, login };

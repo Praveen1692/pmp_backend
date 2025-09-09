@@ -18,8 +18,10 @@ app.get("/", (req, res) => {
 
 // import the routes
 import healthCheckRouter from "./routes/health.routes.js";
- 
+import authRouter from "./routes/auth.routes.js";
+
 app.use("/api/v1/healthcheck", healthCheckRouter);
+app.use("/api/v1/auth", authRouter);
 
 app.listen(PORT, () => {
   console.log(`server start at  port at http://localhost:${PORT}`);
