@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { emailVerificationMailgenContent, sendEmail } from "../utils/mail.js";
 
+
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -120,4 +121,29 @@ const login = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "User LoggedIn Successfully"));
 });
 
-export { registerUser, login };
+const logout = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        refreshToken: "",
+      },
+    },
+    {
+      new: true,
+    },
+  );
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, "User successfully logout"));
+});
+
+const gerCurrUser = asyncHandler(async (req, res) => {});
+export { registerUser, login, logout };
