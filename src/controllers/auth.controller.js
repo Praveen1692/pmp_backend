@@ -3,7 +3,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { emailVerificationMailgenContent, sendEmail } from "../utils/mail.js";
-
+import crypto from "crypto";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -45,8 +45,8 @@ const registerUser = asyncHandler(async (req, res) => {
   const { unHashedToken, hashedToken, tokenExpiry } =
     await user.generateTemporaryToken();
 
-  user.emailverificationToken = hashedToken;
-  user.emailverificationExpiry = tokenExpiry;
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
 
   await user.save({ validateBeforeSave: false });
 
@@ -145,5 +145,42 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "User successfully logout"));
 });
 
-const gerCurrUser = asyncHandler(async (req, res) => {});
-export { registerUser, login, logout };
+const gerCurrentUser = asyncHandler(async (req, res) => {
+  return req
+    .status(200)
+    .json(new ApiResponse(200, req.user, "Current User Details"));
+});
+
+const verifyEmail = asyncHandler(async (req, res) => {
+  const { verificationToken } = req.params;
+
+  if (!verificationToken) {
+    throw new ApiError(400, "Email verification token is missing");
+  }
+
+  let hashedToken = crypto
+    .createHash("sha256")
+    .update(verificationToken)
+    .digest("hex");
+
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Email verification token in missing");
+  }
+
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpiry = undefined;
+
+  user.isEmailVerified = true;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(201)
+    .json(new ApiResponse(200, { isEmailVerified: true }, "Email is verified"));
+});
+
+export { registerUser, login, logout, gerCurrentUser, verifyEmail };

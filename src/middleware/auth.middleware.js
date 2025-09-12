@@ -7,9 +7,19 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
   console.log("TOken Auth Middleware", req.cookies.accessToken);
   console.log("Token bearer", req.header("Authorization"));
 
-  const token =
+  const rawToken =
     res.cookies?.accessToken ||
     req.header("Authorization")?.replace("Bearer ", "");
+  console.log("raw token ", rawToken);
+
+  let token;
+  if (rawToken && rawToken.startsWith("accessToken=")) {
+    token = rawToken.split(";")[0].replace("accessToken=", "");
+  } else {
+    token = rawToken; // Already clean if from Authorization header
+  }
+
+  console.log("Final Token:", token);
 
   if (!token) {
     throw new ApiError(401, "Unauthorized request");
@@ -30,6 +40,6 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    throw new ApiError(401, error.message);
+    throw new ApiError(401, "Something went in token");
   }
 });
